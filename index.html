@@ -1,0 +1,986 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>The Quantum Timeline</title>
+  <style>
+    :root {
+      --bg-1: #07131f;
+      --bg-2: #102337;
+      --text: #edf5fb;
+      --muted: #a7c2d8;
+      --line: rgba(151, 205, 236, 0.34);
+      --alg: #8ef3c4;
+      --hard: #86c7ff;
+      --gov: #ffd58a;
+      --inv: #ff9ecf;
+      --panel: rgba(5, 17, 27, 0.72);
+      --cont-global: #7de39f;
+      --cont-eu: #7fa9ff;
+      --cont-na: #8cd6ff;
+      --cont-as: #ff8d8d;
+      --cont-mi: #ffe184;
+      --cont-af: #ffb16a;
+      --cont-au: #c39bff;
+      --cont-ca: #39ff7a;
+      --cont-sa: #1a3f8f;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      height: 100%;
+      color: var(--text);
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      background:
+        radial-gradient(circle at 20% 20%, #224565 0%, transparent 38%),
+        radial-gradient(circle at 85% 80%, #1d3b5b 0%, transparent 40%),
+        linear-gradient(150deg, var(--bg-1), var(--bg-2));
+    }
+
+    .wrap {
+      min-height: 100%;
+      display: grid;
+      grid-template-rows: auto auto 1fr auto;
+      gap: 12px;
+      padding: 14px;
+    }
+
+    .panel {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: var(--panel);
+      padding: 12px;
+      backdrop-filter: blur(4px);
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 1.2rem;
+    }
+
+    .sub {
+      margin: 6px 0 0;
+      color: var(--muted);
+      font-size: 0.9rem;
+      line-height: 1.35;
+    }
+
+    .filters {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .chip {
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 6px 10px;
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--text);
+      font-size: 0.82rem;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      user-select: none;
+    }
+
+    .chip input { margin: 0; accent-color: #7ed7ff; }
+
+    .dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      border: 1px solid rgba(255,255,255,0.4);
+    }
+
+    .timeline {
+      position: relative;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: rgba(5, 16, 24, 0.62);
+      overflow: auto;
+      padding: 28px 18px 20px;
+      cursor: grab;
+    }
+
+    .timeline.dragging { cursor: grabbing; }
+
+    .track {
+      position: relative;
+      min-width: 1450px;
+      height: 440px;
+    }
+
+    .spine {
+      position: absolute;
+      left: 34px;
+      right: 34px;
+      top: 220px;
+      height: 4px;
+      border-radius: 999px;
+      background: linear-gradient(90deg, rgba(126, 215, 255, 0.25), rgba(126, 215, 255, 0.85), rgba(126, 215, 255, 0.25));
+      box-shadow: 0 0 16px rgba(126, 215, 255, 0.2);
+    }
+
+    .milestone {
+      position: absolute;
+      width: 220px;
+      transform: translateX(-50%);
+      display: grid;
+      gap: 6px;
+    }
+
+    .milestone.top { top: 26px; }
+    .milestone.bottom { top: 246px; }
+
+    .stem {
+      position: absolute;
+      left: 50%;
+      width: 2px;
+      background: rgba(165, 217, 245, 0.5);
+      transform: translateX(-50%);
+    }
+
+    .milestone.top .stem { top: 180px; height: 40px; }
+    .milestone.bottom .stem { top: -26px; height: 26px; }
+
+    .node {
+      position: absolute;
+      left: 50%;
+      top: 213px;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      transform: translateX(-50%);
+      border: 2px solid rgba(255,255,255,0.6);
+      box-shadow: 0 0 14px rgba(140, 214, 255, 0.35);
+      background: #7fd5ff;
+    }
+
+    .card {
+      border: 1px solid rgba(180, 220, 243, 0.32);
+      border-radius: 10px;
+      background: rgba(7, 20, 30, 0.84);
+      padding: 10px;
+      display: grid;
+      gap: 6px;
+      min-height: 122px;
+    }
+
+    .milestone.cont-global .card { border-color: var(--cont-global); box-shadow: inset 0 0 0 1px rgba(125, 227, 159, 0.25); }
+    .milestone.cont-europe .card { border-color: var(--cont-eu); box-shadow: inset 0 0 0 1px rgba(127, 169, 255, 0.25); }
+    .milestone.cont-north-america .card { border-color: var(--cont-na); box-shadow: inset 0 0 0 1px rgba(140, 214, 255, 0.25); }
+    .milestone.cont-asia .card { border-color: var(--cont-as); box-shadow: inset 0 0 0 1px rgba(255, 141, 141, 0.25); }
+    .milestone.cont-middle-east .card { border-color: var(--cont-mi); box-shadow: inset 0 0 0 1px rgba(255, 225, 132, 0.25); }
+    .milestone.cont-africa .card { border-color: var(--cont-af); box-shadow: inset 0 0 0 1px rgba(255, 177, 106, 0.25); }
+    .milestone.cont-oceania .card { border-color: var(--cont-au); box-shadow: inset 0 0 0 1px rgba(195, 155, 255, 0.25); }
+    .milestone.cont-central-america .card { border-color: var(--cont-ca); box-shadow: inset 0 0 0 1px rgba(57, 255, 122, 0.28); }
+    .milestone.cont-south-america .card { border-color: var(--cont-sa); box-shadow: inset 0 0 0 1px rgba(26, 63, 143, 0.34); }
+
+    .year {
+      font-size: 0.92rem;
+      font-weight: 700;
+      color: #e6f4ff;
+    }
+
+    .title {
+      font-size: 0.86rem;
+      line-height: 1.28;
+      color: #d7eaf8;
+    }
+
+    .tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+    }
+
+    .tag {
+      font-size: 0.72rem;
+      border-radius: 999px;
+      padding: 2px 8px;
+      border: 1px solid var(--line);
+      color: #d9ecf8;
+      background: rgba(255,255,255,0.04);
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .kind {
+      font-size: 0.7rem;
+      border-radius: 999px;
+      border: 1px solid rgba(175, 217, 242, 0.4);
+      background: rgba(175, 217, 242, 0.14);
+      color: #dff1fb;
+      padding: 2px 8px;
+      width: fit-content;
+    }
+
+    .hidden { display: none; }
+
+    .meta {
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+
+    .country-panel {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: rgba(7, 20, 30, 0.58);
+      padding: 10px;
+      display: grid;
+      gap: 8px;
+    }
+
+    .company-panel {
+      display: grid;
+      gap: 8px;
+    }
+
+    .company-controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .company-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(220px, 1fr));
+      gap: 8px;
+    }
+
+    .company-card {
+      border: 1px solid rgba(171, 214, 240, 0.3);
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.04);
+      padding: 8px;
+      display: grid;
+      gap: 4px;
+      font-size: 0.76rem;
+      line-height: 1.3;
+    }
+
+    .company-name {
+      font-size: 0.86rem;
+      font-weight: 700;
+      color: #eef8ff;
+    }
+
+    .badge-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+    }
+
+    .badge {
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 2px 7px;
+      background: rgba(255, 255, 255, 0.05);
+      color: #e3f2fc;
+      font-size: 0.68rem;
+    }
+
+    .badge.startup-yes {
+      border-color: rgba(57, 255, 122, 0.9);
+      color: #d9ffe8;
+      background: rgba(57, 255, 122, 0.12);
+    }
+
+    .badge.startup-no {
+      border-color: rgba(145, 186, 214, 0.55);
+      color: #d3e9f8;
+      background: rgba(145, 186, 214, 0.12);
+    }
+
+    .country-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(170px, 1fr));
+      gap: 7px;
+    }
+
+    .country-item {
+      border: 1px solid rgba(171, 214, 240, 0.25);
+      border-radius: 8px;
+      padding: 7px;
+      background: rgba(255, 255, 255, 0.03);
+      font-size: 0.74rem;
+      line-height: 1.35;
+      color: #dcecf8;
+    }
+
+    .country-item strong {
+      display: block;
+      color: #eef8ff;
+      margin-bottom: 2px;
+    }
+
+    .country-item.south-america {
+      background: rgba(26, 63, 143, 0.78);
+      border-color: rgba(130, 168, 255, 0.56);
+      color: #e6f2ff;
+    }
+
+    .country-item.central-america {
+      background: rgba(57, 255, 122, 0.14);
+      border-color: rgba(57, 255, 122, 0.9);
+      color: #eafff2;
+    }
+
+
+    @media (max-width: 900px) {
+      .track { height: 500px; }
+      .milestone { width: 190px; }
+      .card { min-height: 136px; }
+      .company-grid { grid-template-columns: 1fr; }
+      .country-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <section class="panel">
+      <h1>The Quantum Timeline</h1>
+      <p class="sub">A 40+ year story: scroll horizontally through the milestones that built modern quantum computing.</p>
+    </section>
+
+    <section class="panel filters" id="filters"></section>
+
+    <section class="panel company-panel">
+      <div class="year">Global Company Leaders</div>
+      <div class="meta">Global list includes Top 20 companies and country-relevant leaders even when they are outside the Top 20 (for example, France).</div>
+      <div class="company-controls" id="company-controls">
+        <label class="chip" for="company-top20">
+          <input id="company-top20" type="checkbox" checked data-company-top20 />
+          <span>Top 20 Global</span>
+        </label>
+        <label class="chip" for="company-country">
+          <input id="company-country" type="checkbox" checked data-company-country />
+          <span>Country Leaders</span>
+        </label>
+        <label class="chip" for="company-startup-filter">
+          <span>Startup Filter</span>
+          <select id="company-startup-filter" style="background:#0f2234;color:#e9f6ff;border:1px solid var(--line);border-radius:8px;padding:3px 8px;">
+            <option value="all">All</option>
+            <option value="yes">Startup Only</option>
+            <option value="no">Non-Startup Only</option>
+          </select>
+        </label>
+      </div>
+      <div class="company-grid" id="company-grid"></div>
+      <div class="meta" id="company-meta">Company list loading...</div>
+    </section>
+
+    <section class="country-panel">
+      <div class="year">Central + South America Country Coverage</div>
+      <div class="meta">Status in this dataset: explicit milestone present, or monitoring status where no major verified milestone is currently listed.</div>
+      <div class="country-grid" id="country-grid"></div>
+    </section>
+
+    <section class="timeline" id="timeline" aria-label="Horizontal quantum computing timeline">
+      <div class="track" id="track">
+        <div class="spine"></div>
+      </div>
+    </section>
+
+    <section class="panel meta" id="meta">Milestones loading...</section>
+  </main>
+
+  <script>
+    const categoryInfo = {
+      algorithms: { label: "Algorithms", icon: "A", color: "var(--alg)" },
+      hardware: { label: "Hardware", icon: "H", color: "var(--hard)" },
+      government: { label: "Gov Programs", icon: "G", color: "var(--gov)" },
+      investments: { label: "Investments", icon: "I", color: "var(--inv)" }
+    };
+    const periodInfo = {
+      p_1980_2000: { label: "1980-2000" },
+      p_2001_2015: { label: "2001-2015" },
+      p_2016_2026p: { label: "2016-2026+" }
+    };
+    const kindInfo = {
+      innovation: { label: "Innovation", icon: "In" },
+      global_event: { label: "Global Event", icon: "GE" }
+    };
+    const continentInfo = {
+      global: { label: "Global", icon: "GL" },
+      europe: { label: "Europe", icon: "EU" },
+      north_america: { label: "North America", icon: "NA" },
+      central_america: { label: "Central America", icon: "CA" },
+      south_america: { label: "South America", icon: "SA" },
+      asia: { label: "Asia", icon: "AS" },
+      middle_east: { label: "Middle East", icon: "MI" },
+      africa: { label: "Africa", icon: "AF" },
+      oceania: { label: "Oceania", icon: "AU" }
+    };
+    const continentByTitle = {
+      "Feynman proposes quantum simulation": "global",
+      "Shor introduces factoring algorithm": "global",
+      "First Shor demonstration": "north_america",
+      "D-Wave One commercial annealing era": "north_america",
+      "IBM Quantum Experience opens cloud access": "global",
+      "China launches Micius quantum satellite": "asia",
+      "US National Quantum Initiative Act": "north_america",
+      "EU Quantum Flagship launches": "europe",
+      "France launches national quantum strategy": "europe",
+      "Netherlands growth-fund boost for Quantum Delta NL": "europe",
+      "Swiss Quantum Initiative is adopted": "europe",
+      "Google quantum supremacy experiment": "north_america",
+      "Photonic quantum advantage claims (Jiuzhang)": "asia",
+      "UN designates 2025 as International Year of Quantum": "global",
+      "UK National Quantum Strategy (2023-2033) published": "europe",
+      "IBM 1000+ qubit generation": "north_america",
+      "Israel opens IQCC (Tel Aviv University)": "middle_east",
+      "Australia expands silicon quantum innovation (Diraq, Sydney)": "oceania",
+      "Saudi Arabia deploys first quantum computer": "middle_east",
+      "South Africa launches national quantum access": "africa",
+      "Colombia receives first university quantum computer": "south_america",
+      "Brazil announces Paraiba quantum center deployment": "south_america",
+      "Spain Quantum Spain infrastructure milestone": "europe",
+      "Error-corrected prototype era": "global"
+    };
+
+    const milestones = [
+      {
+        year: "1981",
+        title: "Feynman proposes quantum simulation",
+        details: "Idea: quantum systems may be best simulated by quantum machines.",
+        categories: ["algorithms"],
+        kind: "Innovation",
+        source: "https://research.ibm.com/publications/simulating-physics-with-computers"
+      },
+      {
+        year: "1994",
+        title: "Shor introduces factoring algorithm",
+        details: "Major algorithmic milestone showing potential cryptographic impact.",
+        categories: ["algorithms"],
+        kind: "Innovation",
+        source: "https://spacefrontiers.org/r/10.1137/s0097539795293172"
+      },
+      {
+        year: "2001",
+        title: "First Shor demonstration",
+        details: "Early experimental demonstration of Shor-style factoring on small scales.",
+        categories: ["algorithms", "hardware"],
+        kind: "Innovation",
+        source: "https://research.ibm.com/publications/experimental-realization-of-shors-quantum-factoring-algorithm-using-nuclear-magnetic-resonance"
+      },
+      {
+        year: "2011",
+        title: "D-Wave One commercial annealing era",
+        details: "Early commercial hardware availability accelerated global industry attention.",
+        categories: ["hardware", "investments"],
+        kind: "Global Event",
+        source: "https://www.dwavesys.com/company/newsroom/press-release/lockheed-martin-and-d-wave-systems-announce-agreement/"
+      },
+      {
+        year: "2016",
+        title: "IBM Quantum Experience opens cloud access",
+        details: "Developers and students worldwide gain direct access to quantum processors.",
+        categories: ["hardware", "algorithms"],
+        kind: "Global Event",
+        source: "https://www.ibm.com/quantum/blog/quantum-five-years"
+      },
+      {
+        year: "2016",
+        title: "China launches Micius quantum satellite",
+        details: "Landmark global event for quantum communication and international QKD testing.",
+        categories: ["government", "hardware"],
+        kind: "Global Event",
+        source: "https://www.cnsa.gov.cn/english/n6465652/n6465653/c6657358/content.html"
+      },
+      {
+        year: "2018",
+        title: "US National Quantum Initiative Act",
+        details: "Large federal coordination and funding framework for QIS research and industry.",
+        categories: ["government", "investments"],
+        kind: "Global Event",
+        source: "https://www.congress.gov/bill/115th-congress/house-bill/6227"
+      },
+      {
+        year: "2018",
+        title: "EU Quantum Flagship launches",
+        details: "Major multi-year European program supporting quantum science and engineering.",
+        categories: ["government", "investments"],
+        kind: "Global Event",
+        source: "https://qt.eu/news/2018/quantum-flagship-launch-press-release"
+      },
+      {
+        year: "2021",
+        title: "France launches national quantum strategy",
+        details: "France announces a coordinated national quantum plan to scale research, infrastructure, and startups.",
+        categories: ["government", "investments"],
+        kind: "Global Event",
+        source: "https://www.universite-paris-saclay.fr/en/news/quantum-ambitions-positioning-france-cutting-edge-technology"
+      },
+      {
+        year: "2021",
+        title: "Netherlands growth-fund boost for Quantum Delta NL",
+        details: "Major Dutch public-private acceleration funding expands hubs, startups, and quantum R&D capacity.",
+        categories: ["government", "investments"],
+        kind: "Global Event",
+        source: "https://www.cwi.nl/en/news/quantum-delta-nl-awarded-615-million-euro-from-netherlands2019-national-growth-fund-to-accelerate-quantum-technology/"
+      },
+      {
+        year: "2022",
+        title: "Swiss Quantum Initiative is adopted",
+        details: "Federal Council-backed measure consolidates Switzerland's long-term quantum innovation position.",
+        categories: ["government", "investments"],
+        kind: "Global Event",
+        source: "https://qc.ethz.ch/community-and-initiatives/network/swiss-quantum-initiative.html"
+      },
+      {
+        year: "2019",
+        title: "Google quantum supremacy experiment",
+        details: "High-profile hardware+algorithm benchmark point for public awareness.",
+        categories: ["hardware", "investments"],
+        kind: "Innovation",
+        source: "https://research.google/pubs/quantum-supremacy-using-a-programmable-superconducting-processor/"
+      },
+      {
+        year: "2020",
+        title: "Photonic quantum advantage claims (Jiuzhang)",
+        details: "Photonic platforms join superconducting systems in global advantage-style milestones.",
+        categories: ["hardware", "algorithms"],
+        kind: "Innovation",
+        source: "https://www.science.org/doi/10.1126/science.abe8770"
+      },
+      {
+        year: "2024",
+        title: "UN designates 2025 as International Year of Quantum",
+        details: "Global recognition event accelerating education, policy, and collaboration.",
+        categories: ["government"],
+        kind: "Global Event",
+        source: "https://www.unesco.org/en/years/quantum-science-technology"
+      },
+      {
+        year: "2023",
+        title: "UK National Quantum Strategy (2023-2033) published",
+        details: "UK sets long-horizon national missions and commits multi-year public investment in quantum.",
+        categories: ["government", "investments"],
+        kind: "Global Event",
+        source: "https://www.gov.uk/government/publications/national-quantum-strategy/national-quantum-strategy-missions"
+      },
+      {
+        year: "2023",
+        title: "IBM 1000+ qubit generation",
+        details: "Scale milestone highlighting rapid hardware roadmap progress.",
+        categories: ["hardware", "investments"],
+        kind: "Innovation",
+        source: "https://www.ibm.com/quantum/summit-2023"
+      },
+      {
+        year: "2024",
+        title: "Israel opens IQCC (Tel Aviv University)",
+        details: "Israeli Quantum Computing Center launch expands local multi-platform quantum R&D capability.",
+        categories: ["hardware", "government", "investments"],
+        kind: "Innovation",
+        source: "https://www.quantum-machines.co/press_release/quantum-machines-opens-the-israeli-quantum-computing-center/"
+      },
+      {
+        year: "2024",
+        title: "Australia expands silicon quantum innovation (Diraq, Sydney)",
+        details: "Diraq opens a new commercial laboratory in Sydney focused on fault-tolerant silicon quantum-dot development.",
+        categories: ["hardware", "investments"],
+        kind: "Innovation",
+        source: "https://diraq.com/newsdesk/diraq-opens-new-commercial-laboratory-in-sydney-to-propel-era-of-fault-tolerant-quantum-computing"
+      },
+      {
+        year: "2025",
+        title: "Saudi Arabia deploys first quantum computer",
+        details: "Aramco and PASQAL announce on-site neutral-atom quantum system in Saudi Arabia.",
+        categories: ["hardware", "investments", "government"],
+        kind: "Innovation",
+        source: "https://www.aramco.com/en/news-media/news/2025/aramco-and-pasqal-make-history-with-saudi-arabias-first-quantum-computer"
+      },
+      {
+        year: "2025",
+        title: "South Africa launches national quantum access",
+        details: "CHPC opens quantum computing access pathway, expanding applied quantum innovation in Africa.",
+        categories: ["government", "hardware"],
+        kind: "Innovation",
+        source: "https://www.chpc.ac.za/chpc-launches-access-to-quantum-computing/"
+      },
+      {
+        year: "2025",
+        title: "Colombia receives first university quantum computer",
+        details: "Universidad de los Andes deploys a SpinQ system, marking a notable local quantum hardware milestone.",
+        categories: ["hardware", "government"],
+        kind: "Innovation",
+        source: "https://www.uniandes.edu.co/noticias/ciencias-aplicadas/el-primer-computador-cuantico-llega-a-colombia"
+      },
+      {
+        year: "2025",
+        title: "Brazil announces Paraiba quantum center deployment",
+        details: "Brazilian program confirms a regional quantum computer installation path linked to national infrastructure.",
+        categories: ["government", "investments", "hardware"],
+        kind: "Global Event",
+        source: "https://www.gov.br/mcti/pt-br/acompanhe-o-mcti/noticias/2025/07/computador-quantico-do-nordeste-sera-instalado-em-joao-pessoa"
+      },
+      {
+        year: "2025",
+        title: "Spain Quantum Spain infrastructure milestone",
+        details: "Quantum Spain advances national infrastructure around supercomputing-linked quantum systems.",
+        categories: ["government", "hardware", "investments"],
+        kind: "Global Event",
+        source: "https://commission.europa.eu/projects/quantum-spain-spanish-supercomputing-network_es"
+      },
+      {
+        year: "2025+",
+        title: "Error-corrected prototype era",
+        details: "Transition from noisy experiments to early logical-qubit demonstrations.",
+        categories: ["hardware", "algorithms", "government"],
+        kind: "Innovation",
+        source: "https://www.ibm.com/quantum/summit-2023"
+      }
+    ];
+
+    const state = {
+      activeCats: new Set(Object.keys(categoryInfo)),
+      activeKinds: new Set(Object.keys(kindInfo)),
+      activeContinents: new Set(Object.keys(continentInfo)),
+      activePeriods: new Set(Object.keys(periodInfo))
+    };
+    const companyState = {
+      includeTop20: true,
+      includeCountryLeaders: true,
+      startupFilter: "all"
+    };
+    const companies = [
+      { name: "IBM Quantum", country: "United States", city: "New York", globalRank: 1, countryLeader: true, startup: false, startupStatus: "Not a startup (public company)", focus: "Superconducting" },
+      { name: "Google Quantum AI", country: "United States", city: "California", globalRank: 2, countryLeader: true, startup: false, startupStatus: "Not a startup (large enterprise unit)", focus: "Superconducting" },
+      { name: "Microsoft Azure Quantum", country: "United States", city: "Washington", globalRank: 3, countryLeader: true, startup: false, startupStatus: "Not a startup (public company)", focus: "Platform + hardware ecosystem" },
+      { name: "Amazon Braket / AWS Center for Quantum", country: "United States", city: "Washington", globalRank: 4, countryLeader: true, startup: false, startupStatus: "Not a startup (public company)", focus: "Cloud quantum platform" },
+      { name: "Quantinuum", country: "United Kingdom", city: "London / Colorado", globalRank: 5, countryLeader: true, startup: false, startupStatus: "Not a startup (merged enterprise)", focus: "Trapped ion" },
+      { name: "IonQ", country: "United States", city: "Maryland", globalRank: 6, countryLeader: true, startup: false, startupStatus: "Not a startup (public company)", focus: "Trapped ion" },
+      { name: "Rigetti", country: "United States", city: "California", globalRank: 7, countryLeader: true, startup: false, startupStatus: "Not a startup (public company)", focus: "Superconducting" },
+      { name: "D-Wave", country: "Canada", city: "British Columbia", globalRank: 8, countryLeader: true, startup: false, startupStatus: "Not a startup (public company)", focus: "Quantum annealing" },
+      { name: "Xanadu", country: "Canada", city: "Ontario", globalRank: 9, countryLeader: true, startup: true, startupStatus: "Startup (active)", focus: "Photonic" },
+      { name: "PsiQuantum", country: "United States", city: "California", globalRank: 10, countryLeader: true, startup: true, startupStatus: "Startup (active)", focus: "Photonic fault-tolerant" },
+      { name: "QuEra", country: "United States", city: "Massachusetts", globalRank: 11, countryLeader: true, startup: true, startupStatus: "Startup (active)", focus: "Neutral atom" },
+      { name: "Atom Computing", country: "United States", city: "Colorado", globalRank: 12, countryLeader: true, startup: true, startupStatus: "Startup (active)", focus: "Neutral atom" },
+      { name: "AQT (Alpine Quantum Technologies)", country: "Austria", city: "Innsbruck", globalRank: 13, countryLeader: true, startup: true, startupStatus: "Startup (active)", focus: "Trapped ion" },
+      { name: "IQM", country: "Finland", city: "Espoo", globalRank: 14, countryLeader: true, startup: true, startupStatus: "Startup (active)", focus: "Superconducting" },
+      { name: "Pasqal", country: "France", city: "Paris", globalRank: 15, countryLeader: true, startup: true, startupStatus: "Startup (active)", focus: "Neutral atom" },
+      { name: "Alice & Bob", country: "France", city: "Paris", globalRank: 16, countryLeader: true, startup: true, startupStatus: "Startup (active)", focus: "Cat qubits / superconducting" },
+      { name: "Quandela", country: "France", city: "Massy", globalRank: 17, countryLeader: true, startup: true, startupStatus: "Startup (active)", focus: "Photonic" },
+      { name: "Q-CTRL", country: "Australia", city: "Sydney", globalRank: 18, countryLeader: true, startup: true, startupStatus: "Startup (active)", focus: "Control software" },
+      { name: "Diraq", country: "Australia", city: "Sydney", globalRank: 19, countryLeader: true, startup: true, startupStatus: "Startup (active)", focus: "Silicon spin qubits" },
+      { name: "Quantum Machines", country: "Israel", city: "Tel Aviv", globalRank: 20, countryLeader: true, startup: true, startupStatus: "Startup (active)", focus: "Quantum control systems" },
+      { name: "ORCA Computing", country: "United Kingdom", city: "London", globalRank: null, countryLeader: true, startup: true, startupStatus: "Startup (active)", focus: "Photonic" },
+      { name: "Riverlane", country: "United Kingdom", city: "Cambridge", globalRank: null, countryLeader: true, startup: true, startupStatus: "Startup (active)", focus: "Quantum error correction stack" },
+      { name: "Multiverse Computing", country: "Spain", city: "San Sebastian", globalRank: null, countryLeader: true, startup: true, startupStatus: "Startup (active)", focus: "Quantum software applications" },
+      { name: "Classiq", country: "Israel", city: "Tel Aviv", globalRank: null, countryLeader: true, startup: true, startupStatus: "Startup (active)", focus: "Quantum algorithm design software" },
+      { name: "Qilimanjaro Quantum Tech", country: "Spain", city: "Barcelona", globalRank: null, countryLeader: true, startup: true, startupStatus: "Startup (active)", focus: "Analog + gate hardware" },
+      { name: "Origin Quantum", country: "China", city: "Hefei", globalRank: null, countryLeader: true, startup: false, startupStatus: "Not a startup (maturing company)", focus: "Superconducting hardware" },
+      { name: "Baidu Quantum", country: "China", city: "Beijing", globalRank: null, countryLeader: true, startup: false, startupStatus: "Not a startup (large enterprise unit)", focus: "Quantum software + services" },
+      { name: "Fujitsu Quantum", country: "Japan", city: "Tokyo", globalRank: null, countryLeader: true, startup: false, startupStatus: "Not a startup (public company)", focus: "Quantum-inspired + gate ecosystem" },
+      { name: "NTT Research / Quantum", country: "Japan", city: "Tokyo", globalRank: null, countryLeader: true, startup: false, startupStatus: "Not a startup (large enterprise unit)", focus: "Quantum networking + hardware R&D" },
+      { name: "Arqit", country: "United Kingdom", city: "London", globalRank: null, countryLeader: true, startup: false, startupStatus: "Not a startup (public company)", focus: "Quantum-safe communications" }
+    ];
+
+    const latamCountries = [
+      { country: "Belize", region: "Central America", status: "Monitoring", note: "No major verified milestone listed yet in this timeline dataset." },
+      { country: "Costa Rica", region: "Central America", status: "Monitoring", note: "No major verified milestone listed yet in this timeline dataset." },
+      { country: "El Salvador", region: "Central America", status: "Monitoring", note: "No major verified milestone listed yet in this timeline dataset." },
+      { country: "Guatemala", region: "Central America", status: "Monitoring", note: "No major verified milestone listed yet in this timeline dataset." },
+      { country: "Honduras", region: "Central America", status: "Monitoring", note: "No major verified milestone listed yet in this timeline dataset." },
+      { country: "Nicaragua", region: "Central America", status: "Monitoring", note: "No major verified milestone listed yet in this timeline dataset." },
+      { country: "Panama", region: "Central America", status: "Monitoring", note: "No major verified milestone listed yet in this timeline dataset." },
+      { country: "Argentina", region: "South America", status: "Monitoring", note: "No major verified milestone listed yet in this timeline dataset." },
+      { country: "Bolivia", region: "South America", status: "Monitoring", note: "No major verified milestone listed yet in this timeline dataset." },
+      { country: "Brazil", region: "South America", status: "Milestone Included", note: "2025 Paraiba quantum center deployment announcement added." },
+      { country: "Chile", region: "South America", status: "Monitoring", note: "No major verified milestone listed yet in this timeline dataset." },
+      { country: "Colombia", region: "South America", status: "Milestone Included", note: "2025 first university quantum computer milestone added." },
+      { country: "Ecuador", region: "South America", status: "Monitoring", note: "No major verified milestone listed yet in this timeline dataset." },
+      { country: "Guyana", region: "South America", status: "Monitoring", note: "No major verified milestone listed yet in this timeline dataset." },
+      { country: "Paraguay", region: "South America", status: "Monitoring", note: "No major verified milestone listed yet in this timeline dataset." },
+      { country: "Peru", region: "South America", status: "Monitoring", note: "No major verified milestone listed yet in this timeline dataset." },
+      { country: "Suriname", region: "South America", status: "Monitoring", note: "No major verified milestone listed yet in this timeline dataset." },
+      { country: "Uruguay", region: "South America", status: "Monitoring", note: "No major verified milestone listed yet in this timeline dataset." },
+      { country: "Venezuela", region: "South America", status: "Monitoring", note: "No major verified milestone listed yet in this timeline dataset." }
+    ];
+
+    const filtersEl = document.getElementById("filters");
+    const trackEl = document.getElementById("track");
+    const timelineEl = document.getElementById("timeline");
+    const metaEl = document.getElementById("meta");
+    const countryGridEl = document.getElementById("country-grid");
+    const companyControlsEl = document.getElementById("company-controls");
+    const companyGridEl = document.getElementById("company-grid");
+    const companyMetaEl = document.getElementById("company-meta");
+
+    function buildFilters() {
+      Object.entries(categoryInfo).forEach(([key, info]) => {
+        filtersEl.insertAdjacentHTML("beforeend", `
+          <label class="chip" for="cat-${key}">
+            <input id="cat-${key}" type="checkbox" checked data-cat="${key}" />
+            <span class="dot" style="background:${info.color}"></span>
+            <span>${info.label}</span>
+          </label>
+        `);
+      });
+
+      Object.entries(kindInfo).forEach(([key, info]) => {
+        filtersEl.insertAdjacentHTML("beforeend", `
+          <label class="chip" for="kind-${key}">
+            <input id="kind-${key}" type="checkbox" checked data-kind="${key}" />
+            <span>${info.icon}</span>
+            <span>${info.label}</span>
+          </label>
+        `);
+      });
+
+      Object.entries(continentInfo).forEach(([key, info]) => {
+        filtersEl.insertAdjacentHTML("beforeend", `
+          <label class="chip" for="cont-${key}">
+            <input id="cont-${key}" type="checkbox" checked data-continent="${key}" />
+            <span>${info.icon}</span>
+            <span>${info.label}</span>
+          </label>
+        `);
+      });
+
+      Object.entries(periodInfo).forEach(([key, info]) => {
+        filtersEl.insertAdjacentHTML("beforeend", `
+          <label class="chip" for="period-${key}">
+            <input id="period-${key}" type="checkbox" checked data-period="${key}" />
+            <span>${info.label}</span>
+          </label>
+        `);
+      });
+
+      filtersEl.addEventListener("change", (e) => {
+        const target = e.target;
+        let periodChanged = false;
+        if (target.matches("input[data-cat]")) {
+          const cat = target.dataset.cat;
+          if (target.checked) state.activeCats.add(cat);
+          else state.activeCats.delete(cat);
+        } else if (target.matches("input[data-kind]")) {
+          const kind = target.dataset.kind;
+          if (target.checked) state.activeKinds.add(kind);
+          else state.activeKinds.delete(kind);
+        } else if (target.matches("input[data-continent]")) {
+          const continent = target.dataset.continent;
+          if (target.checked) state.activeContinents.add(continent);
+          else state.activeContinents.delete(continent);
+        } else if (target.matches("input[data-period]")) {
+          const period = target.dataset.period;
+          if (target.checked) state.activePeriods.add(period);
+          else state.activePeriods.delete(period);
+          periodChanged = true;
+        } else {
+          return;
+        }
+        refreshVisibility();
+        if (periodChanged) {
+          scrollToVisibleRange();
+        }
+      });
+    }
+
+    function periodForYearLabel(yearLabel) {
+      const y = Number.parseInt(String(yearLabel), 10);
+      if (!Number.isFinite(y)) return "outside";
+      if (y >= 1980 && y <= 2000) return "p_1980_2000";
+      if (y >= 2001 && y <= 2015) return "p_2001_2015";
+      if (y >= 2016 && y <= 2026) return "p_2016_2026p";
+      return "outside";
+    }
+
+    function buildTimeline() {
+      const count = milestones.length;
+      const width = Math.max(trackEl.clientWidth, 280 + (count - 1) * 210);
+      trackEl.style.minWidth = `${width}px`;
+      const span = width - 100;
+
+      milestones.forEach((m, idx) => {
+        const x = 50 + (idx / (count - 1)) * span;
+        const posClass = idx % 2 === 0 ? "top" : "bottom";
+
+        const tags = m.categories.map((c) => {
+          const cat = categoryInfo[c];
+          return `<span class="tag"><span class="dot" style="background:${cat.color}"></span>${cat.icon} ${cat.label}</span>`;
+        }).join("");
+
+        const card = document.createElement("article");
+        card.className = `milestone ${posClass}`;
+        card.style.left = `${x}px`;
+        card.dataset.year = m.year;
+        card.dataset.categories = m.categories.join(",");
+        card.dataset.kind = (m.kind === "Global Event") ? "global_event" : "innovation";
+        card.dataset.continent = continentByTitle[m.title] || "global";
+        card.dataset.period = periodForYearLabel(m.year);
+        card.classList.add(`cont-${card.dataset.continent.replace(/_/g, "-")}`);
+        card.innerHTML = `
+          <div class="node" style="background:${categoryInfo[m.categories[0]].color}"></div>
+          <div class="stem"></div>
+          <div class="card">
+            <div class="year">${m.year}</div>
+            <div class="kind">${m.kind || "Milestone"}</div>
+            <div class="title">${m.title}</div>
+            <div class="meta">${m.details}</div>
+            <div class="meta"><a href="${m.source || "#"}" target="_blank" rel="noopener" style="color:#9adfff;">Source</a></div>
+            <div class="meta">Continent: ${(continentInfo[card.dataset.continent] || continentInfo.global).label}</div>
+            <div class="meta">Window: ${periodInfo[card.dataset.period]?.label || "Outside selected windows"}</div>
+            <div class="tags">${tags}</div>
+          </div>
+        `;
+
+        trackEl.appendChild(card);
+      });
+    }
+
+    function buildCountryCoverage() {
+      if (!countryGridEl) return;
+      countryGridEl.innerHTML = "";
+      latamCountries.forEach((entry) => {
+        const cls = entry.region.toLowerCase().replace(/\s+/g, "-");
+        countryGridEl.insertAdjacentHTML("beforeend", `
+          <article class="country-item ${cls}">
+            <strong>${entry.country}</strong>
+            <div>${entry.region}</div>
+            <div>Status: ${entry.status}</div>
+            <div>${entry.note}</div>
+          </article>
+        `);
+      });
+    }
+
+    function includeCompany(entry) {
+      const isTop20 = Number.isFinite(entry.globalRank) && entry.globalRank <= 20;
+      const top20Visible = companyState.includeTop20 && isTop20;
+      const countryVisible = companyState.includeCountryLeaders && entry.countryLeader;
+      if (!(top20Visible || countryVisible)) return false;
+      if (companyState.startupFilter === "yes" && !entry.startup) return false;
+      if (companyState.startupFilter === "no" && entry.startup) return false;
+      return true;
+    }
+
+    function buildCompanies() {
+      if (!companyGridEl) return;
+      companyGridEl.innerHTML = "";
+      const visible = companies
+        .filter(includeCompany)
+        .sort((a, b) => {
+          const ra = Number.isFinite(a.globalRank) ? a.globalRank : 999;
+          const rb = Number.isFinite(b.globalRank) ? b.globalRank : 999;
+          if (ra !== rb) return ra - rb;
+          if (a.country !== b.country) return a.country.localeCompare(b.country);
+          return a.name.localeCompare(b.name);
+        });
+
+      visible.forEach((c) => {
+        const rankTag = Number.isFinite(c.globalRank) ? `Global Top 20 #${c.globalRank}` : "Country-Relevant Leader";
+        companyGridEl.insertAdjacentHTML("beforeend", `
+          <article class="company-card">
+            <div class="company-name">${c.name}</div>
+            <div class="badge-row">
+              <span class="badge">${rankTag}</span>
+              <span class="badge ${c.startup ? "startup-yes" : "startup-no"}">Startup: ${c.startup ? "Yes" : "No"}</span>
+            </div>
+            <div>Country: ${c.country}</div>
+            <div>City/HQ: ${c.city}</div>
+            <div>Focus: ${c.focus}</div>
+            <div>Status: ${c.startupStatus}</div>
+          </article>
+        `);
+      });
+
+      const startupCount = visible.filter((c) => c.startup).length;
+      const top20Count = visible.filter((c) => Number.isFinite(c.globalRank) && c.globalRank <= 20).length;
+      const countryOnlyCount = visible.filter((c) => !Number.isFinite(c.globalRank)).length;
+      companyMetaEl.textContent = `${visible.length} companies shown | ${top20Count} from global top 20 | ${countryOnlyCount} country-relevant additions | ${startupCount} currently listed as startups`;
+    }
+
+    function wireCompanyControls() {
+      if (!companyControlsEl) return;
+      companyControlsEl.addEventListener("change", (e) => {
+        const target = e.target;
+        if (target.matches("input[data-company-top20]")) {
+          companyState.includeTop20 = target.checked;
+        } else if (target.matches("input[data-company-country]")) {
+          companyState.includeCountryLeaders = target.checked;
+        } else if (target.matches("#company-startup-filter")) {
+          companyState.startupFilter = target.value;
+        } else {
+          return;
+        }
+        buildCompanies();
+      });
+    }
+
+    function refreshVisibility() {
+      const cards = [...trackEl.querySelectorAll(".milestone")];
+      let shown = 0;
+      cards.forEach((card) => {
+        const cats = card.dataset.categories.split(",");
+        const kindVisible = state.activeKinds.has(card.dataset.kind);
+        const catVisible = cats.some((c) => state.activeCats.has(c));
+        const continentVisible = state.activeContinents.has(card.dataset.continent);
+        const periodVisible = card.dataset.period === "outside" ? true : state.activePeriods.has(card.dataset.period);
+        const visible = kindVisible && catVisible && continentVisible && periodVisible;
+        card.classList.toggle("hidden", !visible);
+        if (visible) shown += 1;
+      });
+      metaEl.textContent = `${shown} milestone${shown === 1 ? "" : "s"} visible`;
+    }
+
+    function scrollToVisibleRange() {
+      const visibleCards = [...trackEl.querySelectorAll(".milestone")].filter((card) => !card.classList.contains("hidden"));
+      if (visibleCards.length === 0) return;
+      const first = visibleCards[0];
+      const left = Number.parseFloat(first.style.left || "0");
+      const nextScroll = Math.max(0, left - 120);
+      timelineEl.scrollTo({ left: nextScroll, behavior: "smooth" });
+    }
+
+    function enableDragScroll() {
+      let isDown = false;
+      let startX = 0;
+      let startLeft = 0;
+
+      timelineEl.addEventListener("pointerdown", (e) => {
+        isDown = true;
+        startX = e.clientX;
+        startLeft = timelineEl.scrollLeft;
+        timelineEl.classList.add("dragging");
+        timelineEl.setPointerCapture(e.pointerId);
+      });
+
+      timelineEl.addEventListener("pointermove", (e) => {
+        if (!isDown) return;
+        const dx = e.clientX - startX;
+        timelineEl.scrollLeft = startLeft - dx;
+      });
+
+      const stop = () => {
+        isDown = false;
+        timelineEl.classList.remove("dragging");
+      };
+
+      timelineEl.addEventListener("pointerup", stop);
+      timelineEl.addEventListener("pointercancel", stop);
+      timelineEl.addEventListener("pointerleave", () => {
+        if (isDown) stop();
+      });
+    }
+
+    buildFilters();
+    buildCompanies();
+    wireCompanyControls();
+    buildCountryCoverage();
+    buildTimeline();
+    refreshVisibility();
+    enableDragScroll();
+  </script>
+</body>
+</html>
