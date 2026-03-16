@@ -229,15 +229,6 @@
       color: var(--muted);
     }
 
-    .country-panel {
-      border: 1px solid var(--line);
-      border-radius: 12px;
-      background: rgba(7, 20, 30, 0.58);
-      padding: 10px;
-      display: grid;
-      gap: 8px;
-    }
-
     .company-panel {
       display: grid;
       gap: 8px;
@@ -300,47 +291,12 @@
       background: rgba(145, 186, 214, 0.12);
     }
 
-    .country-grid {
-      display: grid;
-      grid-template-columns: repeat(3, minmax(170px, 1fr));
-      gap: 7px;
-    }
-
-    .country-item {
-      border: 1px solid rgba(171, 214, 240, 0.25);
-      border-radius: 8px;
-      padding: 7px;
-      background: rgba(255, 255, 255, 0.03);
-      font-size: 0.74rem;
-      line-height: 1.35;
-      color: #dcecf8;
-    }
-
-    .country-item strong {
-      display: block;
-      color: #eef8ff;
-      margin-bottom: 2px;
-    }
-
-    .country-item.south-america {
-      background: rgba(26, 63, 143, 0.78);
-      border-color: rgba(130, 168, 255, 0.56);
-      color: #e6f2ff;
-    }
-
-    .country-item.central-america {
-      background: rgba(57, 255, 122, 0.14);
-      border-color: rgba(57, 255, 122, 0.9);
-      color: #eafff2;
-    }
-
 
     @media (max-width: 900px) {
       .track { height: 500px; }
       .milestone { width: 190px; }
       .card { min-height: 136px; }
       .company-grid { grid-template-columns: 1fr; }
-      .country-grid { grid-template-columns: 1fr; }
     }
   </style>
 </head>
@@ -378,12 +334,6 @@
       <div class="meta" id="company-meta">Company list loading...</div>
     </section>
 
-    <section class="country-panel">
-      <div class="year">Central + South America Country Coverage</div>
-      <div class="meta">Status in this dataset: explicit milestone present, or monitoring status where no major verified milestone is currently listed.</div>
-      <div class="country-grid" id="country-grid"></div>
-    </section>
-
     <section class="timeline" id="timeline" aria-label="Horizontal quantum computing timeline">
       <div class="track" id="track">
         <div class="spine"></div>
@@ -408,6 +358,17 @@
     const kindInfo = {
       innovation: { label: "Innovation", icon: "In" },
       global_event: { label: "Global Event", icon: "GE" }
+    };
+    const companyInfo = {
+      ecosystem: { label: "Ecosystem" },
+      ibm: { label: "IBM" },
+      google: { label: "Google" },
+      dwave: { label: "D-Wave" },
+      quantum_machines: { label: "Quantum Machines" },
+      diraq: { label: "Diraq" },
+      pasqal: { label: "PASQAL" },
+      aramco: { label: "Aramco" },
+      spinq: { label: "SpinQ" }
     };
     const continentInfo = {
       global: { label: "Global", icon: "GL" },
@@ -470,6 +431,7 @@
         details: "Early experimental demonstration of Shor-style factoring on small scales.",
         categories: ["algorithms", "hardware"],
         kind: "Innovation",
+        companies: ["ibm"],
         source: "https://research.ibm.com/publications/experimental-realization-of-shors-quantum-factoring-algorithm-using-nuclear-magnetic-resonance"
       },
       {
@@ -478,6 +440,7 @@
         details: "Early commercial hardware availability accelerated global industry attention.",
         categories: ["hardware", "investments"],
         kind: "Global Event",
+        companies: ["dwave"],
         source: "https://www.dwavesys.com/company/newsroom/press-release/lockheed-martin-and-d-wave-systems-announce-agreement/"
       },
       {
@@ -486,6 +449,7 @@
         details: "Developers and students worldwide gain direct access to quantum processors.",
         categories: ["hardware", "algorithms"],
         kind: "Global Event",
+        companies: ["ibm"],
         source: "https://www.ibm.com/quantum/blog/quantum-five-years"
       },
       {
@@ -542,6 +506,7 @@
         details: "High-profile hardware+algorithm benchmark point for public awareness.",
         categories: ["hardware", "investments"],
         kind: "Innovation",
+        companies: ["google"],
         source: "https://research.google/pubs/quantum-supremacy-using-a-programmable-superconducting-processor/"
       },
       {
@@ -574,6 +539,7 @@
         details: "Scale milestone highlighting rapid hardware roadmap progress.",
         categories: ["hardware", "investments"],
         kind: "Innovation",
+        companies: ["ibm"],
         source: "https://www.ibm.com/quantum/summit-2023"
       },
       {
@@ -582,6 +548,7 @@
         details: "Israeli Quantum Computing Center launch expands local multi-platform quantum R&D capability.",
         categories: ["hardware", "government", "investments"],
         kind: "Innovation",
+        companies: ["quantum_machines"],
         source: "https://www.quantum-machines.co/press_release/quantum-machines-opens-the-israeli-quantum-computing-center/"
       },
       {
@@ -590,6 +557,7 @@
         details: "Diraq opens a new commercial laboratory in Sydney focused on fault-tolerant silicon quantum-dot development.",
         categories: ["hardware", "investments"],
         kind: "Innovation",
+        companies: ["diraq"],
         source: "https://diraq.com/newsdesk/diraq-opens-new-commercial-laboratory-in-sydney-to-propel-era-of-fault-tolerant-quantum-computing"
       },
       {
@@ -598,6 +566,7 @@
         details: "Aramco and PASQAL announce on-site neutral-atom quantum system in Saudi Arabia.",
         categories: ["hardware", "investments", "government"],
         kind: "Innovation",
+        companies: ["pasqal", "aramco"],
         source: "https://www.aramco.com/en/news-media/news/2025/aramco-and-pasqal-make-history-with-saudi-arabias-first-quantum-computer"
       },
       {
@@ -614,6 +583,7 @@
         details: "Universidad de los Andes deploys a SpinQ system, marking a notable local quantum hardware milestone.",
         categories: ["hardware", "government"],
         kind: "Innovation",
+        companies: ["spinq"],
         source: "https://www.uniandes.edu.co/noticias/ciencias-aplicadas/el-primer-computador-cuantico-llega-a-colombia"
       },
       {
@@ -646,7 +616,8 @@
       activeCats: new Set(Object.keys(categoryInfo)),
       activeKinds: new Set(Object.keys(kindInfo)),
       activeContinents: new Set(Object.keys(continentInfo)),
-      activePeriods: new Set(Object.keys(periodInfo))
+      activePeriods: new Set(Object.keys(periodInfo)),
+      activeCompanies: new Set(Object.keys(companyInfo))
     };
     const companyState = {
       includeTop20: true,
@@ -686,33 +657,10 @@
       { name: "Arqit", country: "United Kingdom", city: "London", globalRank: null, countryLeader: true, startup: false, startupStatus: "Not a startup (public company)", focus: "Quantum-safe communications" }
     ];
 
-    const latamCountries = [
-      { country: "Belize", region: "Central America", status: "Monitoring", note: "No major verified milestone listed yet in this timeline dataset." },
-      { country: "Costa Rica", region: "Central America", status: "Monitoring", note: "No major verified milestone listed yet in this timeline dataset." },
-      { country: "El Salvador", region: "Central America", status: "Monitoring", note: "No major verified milestone listed yet in this timeline dataset." },
-      { country: "Guatemala", region: "Central America", status: "Monitoring", note: "No major verified milestone listed yet in this timeline dataset." },
-      { country: "Honduras", region: "Central America", status: "Monitoring", note: "No major verified milestone listed yet in this timeline dataset." },
-      { country: "Nicaragua", region: "Central America", status: "Monitoring", note: "No major verified milestone listed yet in this timeline dataset." },
-      { country: "Panama", region: "Central America", status: "Monitoring", note: "No major verified milestone listed yet in this timeline dataset." },
-      { country: "Argentina", region: "South America", status: "Monitoring", note: "No major verified milestone listed yet in this timeline dataset." },
-      { country: "Bolivia", region: "South America", status: "Monitoring", note: "No major verified milestone listed yet in this timeline dataset." },
-      { country: "Brazil", region: "South America", status: "Milestone Included", note: "2025 Paraiba quantum center deployment announcement added." },
-      { country: "Chile", region: "South America", status: "Monitoring", note: "No major verified milestone listed yet in this timeline dataset." },
-      { country: "Colombia", region: "South America", status: "Milestone Included", note: "2025 first university quantum computer milestone added." },
-      { country: "Ecuador", region: "South America", status: "Monitoring", note: "No major verified milestone listed yet in this timeline dataset." },
-      { country: "Guyana", region: "South America", status: "Monitoring", note: "No major verified milestone listed yet in this timeline dataset." },
-      { country: "Paraguay", region: "South America", status: "Monitoring", note: "No major verified milestone listed yet in this timeline dataset." },
-      { country: "Peru", region: "South America", status: "Monitoring", note: "No major verified milestone listed yet in this timeline dataset." },
-      { country: "Suriname", region: "South America", status: "Monitoring", note: "No major verified milestone listed yet in this timeline dataset." },
-      { country: "Uruguay", region: "South America", status: "Monitoring", note: "No major verified milestone listed yet in this timeline dataset." },
-      { country: "Venezuela", region: "South America", status: "Monitoring", note: "No major verified milestone listed yet in this timeline dataset." }
-    ];
-
     const filtersEl = document.getElementById("filters");
     const trackEl = document.getElementById("track");
     const timelineEl = document.getElementById("timeline");
     const metaEl = document.getElementById("meta");
-    const countryGridEl = document.getElementById("country-grid");
     const companyControlsEl = document.getElementById("company-controls");
     const companyGridEl = document.getElementById("company-grid");
     const companyMetaEl = document.getElementById("company-meta");
@@ -757,6 +705,15 @@
         `);
       });
 
+      Object.entries(companyInfo).forEach(([key, info]) => {
+        filtersEl.insertAdjacentHTML("beforeend", `
+          <label class="chip" for="company-${key}">
+            <input id="company-${key}" type="checkbox" checked data-company="${key}" />
+            <span>${info.label}</span>
+          </label>
+        `);
+      });
+
       filtersEl.addEventListener("change", (e) => {
         const target = e.target;
         let periodChanged = false;
@@ -777,6 +734,10 @@
           if (target.checked) state.activePeriods.add(period);
           else state.activePeriods.delete(period);
           periodChanged = true;
+        } else if (target.matches("input[data-company]")) {
+          const company = target.dataset.company;
+          if (target.checked) state.activeCompanies.add(company);
+          else state.activeCompanies.delete(company);
         } else {
           return;
         }
@@ -819,6 +780,7 @@
         card.dataset.kind = (m.kind === "Global Event") ? "global_event" : "innovation";
         card.dataset.continent = continentByTitle[m.title] || "global";
         card.dataset.period = periodForYearLabel(m.year);
+        card.dataset.companies = (m.companies || ["ecosystem"]).join(",");
         card.classList.add(`cont-${card.dataset.continent.replace(/_/g, "-")}`);
         card.innerHTML = `
           <div class="node" style="background:${categoryInfo[m.categories[0]].color}"></div>
@@ -836,22 +798,6 @@
         `;
 
         trackEl.appendChild(card);
-      });
-    }
-
-    function buildCountryCoverage() {
-      if (!countryGridEl) return;
-      countryGridEl.innerHTML = "";
-      latamCountries.forEach((entry) => {
-        const cls = entry.region.toLowerCase().replace(/\s+/g, "-");
-        countryGridEl.insertAdjacentHTML("beforeend", `
-          <article class="country-item ${cls}">
-            <strong>${entry.country}</strong>
-            <div>${entry.region}</div>
-            <div>Status: ${entry.status}</div>
-            <div>${entry.note}</div>
-          </article>
-        `);
       });
     }
 
@@ -923,11 +869,13 @@
       let shown = 0;
       cards.forEach((card) => {
         const cats = card.dataset.categories.split(",");
+        const companies = card.dataset.companies.split(",");
         const kindVisible = state.activeKinds.has(card.dataset.kind);
         const catVisible = cats.some((c) => state.activeCats.has(c));
         const continentVisible = state.activeContinents.has(card.dataset.continent);
         const periodVisible = card.dataset.period === "outside" ? true : state.activePeriods.has(card.dataset.period);
-        const visible = kindVisible && catVisible && continentVisible && periodVisible;
+        const companyVisible = companies.some((c) => state.activeCompanies.has(c));
+        const visible = kindVisible && catVisible && continentVisible && periodVisible && companyVisible;
         card.classList.toggle("hidden", !visible);
         if (visible) shown += 1;
       });
@@ -977,7 +925,6 @@
     buildFilters();
     buildCompanies();
     wireCompanyControls();
-    buildCountryCoverage();
     buildTimeline();
     refreshVisibility();
     enableDragScroll();
